@@ -64,3 +64,9 @@ target/
 #Data
 train
 test
+*.csv
+*.gz
+*.log
+*.aux
+*.toc
+_minted*
