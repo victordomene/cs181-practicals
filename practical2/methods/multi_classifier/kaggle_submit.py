@@ -77,7 +77,7 @@ def main():
         final_prediction.append(predicted)
         final_ids.append(ID)
 
-    util.write_predictions(final_prediction, final_ids, "../../multi_classifier_predictions.csv")
+    util.write_predictions(final_prediction, final_ids, "../../predictions/multi_classifier_predictions.csv")
 
     print "# Done!"
 
