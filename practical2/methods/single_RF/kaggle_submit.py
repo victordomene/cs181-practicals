@@ -1,19 +1,13 @@
 import os
-import re
-import hashlib
-import cPickle as pickle
-from collections import Counter
 import random
+import cPickle as pickle
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
 import numpy as np
 from scipy import sparse
-from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.cross_validation import ShuffleSplit
-from sklearn.cross_validation import cross_val_score
 import matplotlib.pyplot as plt
 import util
 
@@ -121,16 +115,14 @@ def call_feats(tree):
 
 ## Feature extraction
 def main():
-    X_train, t_train, train_ids = create_data_matrix(0, 4000, TRAIN_DIR)
+    X_train, t_train, _ = pickle.load(open("../../features/all_tags/train.pickle"))
+    X_test, _, test_ids = pickle.load(open("../../features/all_tags/test.pickle"))
 
-    RFC = RandomForestClassifier(n_estimators = 64, n_jobs = -1)
-    cv = ShuffleSplit(n = X_train.shape[0], n_iter = 10, test_size=0.2)
-    scores = cross_val_score(RFC, X_train, y=t_train, cv=cv, n_jobs = -1)
-    
-    print "Cross Validation Scores, Average Score"
-    print scores, sum(scores)/len(scores)
+    RFC = RandomForestClassifier(n_estimators = 40, n_jobs = -1)
+    RFC.fit(X_train, t_train)
+    pred = RFC.predict(X_test)
 
-    # util.write_predictions(final_prediction, final_ids, "predictions.csv")
+    util.write_predictions(pred, test_ids, "predictions.csv")
 
 if __name__ == "__main__":
     main()
