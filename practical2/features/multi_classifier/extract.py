@@ -14,14 +14,27 @@ except ImportError:
 import numpy as np
 from scipy import sparse
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 import util
 
+counter = 0
 TRAIN_DIR = "../../data/train/"
 TEST_DIR = "../../data/test/"
 
 call_set = set([])
-global_call = []
+
+def plot_confusion_matrix(cm, title='Confusion Matrix', cmap=plt.cm.Blues):
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(util.malware_classes))
+    plt.xticks(tick_marks, util.malware_classes, rotation=45)
+    plt.yticks(tick_marks, util.malware_classes)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
 
 def add_to_set(tree):
     for el in tree.iter():
@@ -64,24 +77,19 @@ def create_data_matrix(start_index, end_index, direc="train"):
     return X, np.array(classes), ids
 
 def call_feats(tree):
-    global global_call
+    # keeping track of progress
+    global counter
+    counter += 1
 
+    if counter % 100 == 0:
+        print counter
+
+    # all tags will be considered "good" for now
     good_calls = util.all_syscalls
 
     call_counter = {}
     for el in tree.iter():
         call = el.tag
-        # attribs = el.attrib
-
-        # if 'hostname' in attribs:
-        #     if re.findall(r"duniasex", attribs['hostname']):
-        #         if 'duniasex' not in call_counter:
-        #             call_counter['duniasex'] = 0
-        #         else:
-        #             call_counter['duniasex'] += 10
-
-        if call not in global_call:
-            global_call.append(call)
 
         if call not in call_counter:
             call_counter[call] = 0
@@ -99,75 +107,91 @@ def call_feats(tree):
 
 ## Feature extraction
 def main():
+    final_ids = []
+    final_prediction = []
+
+    # fetch features for training and valid data
+    # substitute for a pickle load, for training data!
     X_train, t_train, train_ids = create_data_matrix(0, 2000, TRAIN_DIR)
-    print global_call
     X_valid, t_valid, valid_ids = create_data_matrix(2000, 4000, TRAIN_DIR)
 
-    none_index = util.malware_classes.index("None")
-    t_train_bin = [0 if x == none_index else 1 for x in t_train]
+    # separates the t_train only between 0 and 1, where 0 is None and 1 
+    # is any Malware
+    none = util.malware_classes.index("None")
+    t_train_bin = [0 if x == none else 1 for x in t_train]
 
-    RFC = RandomForestClassifier(n_estimators = 128, n_jobs = -1)
-    RFC.fit(X_train, t_train_bin)
-    pred = RFC.predict(X_valid)
+    # train a Random Forest on the data, using a binary classification only
+    # (between Malware and None)
+    RFC_bin = RandomForestClassifier(n_estimators = 64, n_jobs = -1)
+    RFC_bin.fit(X_train, t_train_bin)
 
-    t_train_multi = []
-    t_train_ids = []
+    # predict whether the validation inputs are Malwares or Nones
+    pred_bin = RFC_bin.predict(X_valid)
 
-    final_prediction = []
-    final_ids = []
-    X_train_multi = []
+    # fetch all datapoints that we considered as Malwares
+    X_valid_malware = []
+    t_valid_malware = []
+    valid_ids_malware = []
 
-    X_valid_multi = []
-    t_valid_multi = []
-    valid_ids_multi = []
-
-    # find ones to train: the ones that are not None
-    for i, true in enumerate(t_train):
-        if true != util.malware_classes.index("None"):
-            X_train_multi.append(X_train[i])
-            t_train_multi.append(true)
-
-    count = 0
-    correct = 0
-    for predicted, true, ID, features in zip(pred, t_valid, valid_ids, X_valid):
+    for predicted, ID, true, features in zip(pred_bin, valid_ids, t_valid, X_valid):
+        # if we predicted None, this goes to our final prediction
+        # otherwise, we add it to X_valid_malware
         if predicted == 0:
+            final_prediction.append(none)
             final_ids.append(ID)
-            final_prediction.append(util.malware_classes.index("None"))
-            count += 1
-            if true == util.malware_classes.index("None"):
-                correct += 1
         else:
-            X_valid_multi.append(features)
-            t_valid_multi.append(true)
-            valid_ids_multi.append(ID)
+            X_valid_malware.append(features)
+            t_valid_malware.append(true)
+            valid_ids_malware.append(ID)
 
-    X_train_multi = np.array(X_train_multi)
-    t_train_multi = np.array(t_train_multi)
+    # fetch all the Malwares
+    X_train_malware = []
+    t_train_malware = []
 
-    MRFC = RandomForestClassifier(n_estimators = 128, n_jobs = -1)
-    MRFC.fit(X_train_multi, t_train_multi)
-    pred = MRFC.predict(X_valid_multi)
+    for true, features in zip(t_train, X_train):
+        if true != util.malware_classes.index("None"):
+            X_train_malware.append(features)
+            t_train_malware.append(true)
 
-    for predicted, ID in zip(pred, valid_ids_multi):
+    np.asarray(X_train_malware)
+    np.asarray(t_train_malware)
+
+    # train a Random Forest on the data, using now only the Malwares
+    RFC_malware = RandomForestClassifier(n_estimators = 64, n_jobs = -1)
+    RFC_malware.fit(X_train_malware, t_train_malware)
+    pred_malware = RFC_malware.predict(X_valid_malware)
+
+    for predicted, ID in zip(pred_malware, valid_ids_malware):
         final_prediction.append(predicted)
         final_ids.append(ID)
 
-    print final_prediction
+    y_pred = [x for (y,x) in sorted(zip(final_ids, final_prediction))]
+    y_true = [x for (y,x) in sorted(zip(valid_ids, t_valid))]
 
-    # add # of correct stuff in Malwares
-    for true, predicted in zip(t_valid_multi, pred):
-        if true == predicted:
+    count = 0
+    correct = 0
+    for pred, true in zip(y_pred, y_true):
+        if pred == true:
             correct += 1
-        else:
-            print "{},{}".format(true, predicted)
         count += 1
 
-    print "Percentage correct:"
-    print float(correct) / count * 100
+    print "Percentage:"
+    print float(correct)/count * 100
 
+    # add # of correct stuff in Malwares
+    confmat = confusion_matrix(y_true, y_pred)
+
+    # compute and plot confusion matrix
+    np.set_printoptions(precision=2)
+    print('Confusion matrix, without normalization')
+    print(confmat)
+    plt.figure()
+    plot_confusion_matrix(confmat)
+    # plt.show()
+    plt.savefig("confmatrix.png")
+
+    # save to prediction file!
     # util.write_predictions(final_prediction, final_ids, "predictions.csv")
-
-    # From here, you can train models (eg by importing sklearn and inputting X_train, t_train).
 
 if __name__ == "__main__":
     main()
