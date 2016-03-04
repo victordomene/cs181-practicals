@@ -1,13 +1,6 @@
-# Example Feature Extraction from XML Files
-# We count the number of specific system calls made by the programs, and use
-# these as our features.
-
-# This code requires that the unzipped training set is in a folder called "train". 
-
 import os
-import re
+import cPickle as pickle
 from collections import Counter
-import random
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -20,19 +13,7 @@ import matplotlib.pyplot as plt
 
 import util
 
-def shuffle(x):
-    x = list(x)
-    random.shuffle(x)
-    return x
-
-counter = 0
-TRAIN_DIR = "../../data/train/"
-TEST_DIR = "../../data/test/"
-
-train_shuffle_directory = shuffle(os.listdir(TRAIN_DIR))
-test_shuffle_directory = shuffle(os.listdir(TEST_DIR))
-
-call_set = set([])
+N = 40
 
 def plot_confusion_matrix(cm, title='Confusion Matrix', cmap=plt.cm.Blues):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
@@ -139,7 +120,7 @@ def main():
     # is any Malware
     none = util.malware_classes.index("None")
     t_train_bin = [0 if x == none else 1 for x in t_train]
-    t_valid_bin = [0 if x == none else 1 for x in t_valid]
+    t_test_bin = [0 if x == none else 1 for x in t_test]
 
     # train a Random Forest on the data, using a binary classification only
     # (between Malware and None)
@@ -153,10 +134,10 @@ def main():
 
     # fetch all datapoints that we considered as Malwares
     X_test_malware = []
-    t_valid_malware = []
-    valid_ids_malware = []
+    t_test_malware = []
+    test_ids_malware = []
 
-    for predicted, ID, true, features in zip(pred_bin, valid_ids, t_valid, X_test):
+    for predicted, ID, true, features in zip(pred_bin, test_ids, t_test, X_test):
         # if we predicted None, this goes to our final prediction
         # otherwise, we add it to X_test_malware
         if predicted == 0:
@@ -164,8 +145,8 @@ def main():
             final_ids.append(ID)
         else:
             X_test_malware.append(features)
-            t_valid_malware.append(true)
-            valid_ids_malware.append(ID)
+            t_test_malware.append(true)
+            test_ids_malware.append(ID)
 
     # fetch all the Malwares
     X_train_malware = []
@@ -181,40 +162,40 @@ def main():
 
     # train a Random Forest on the data, using now only the Malwares
     print "# Training another RandomForestClassifier with n_estimators = {}, for a multi-class classification between only Malwares..."
-    RFC_malware = RandomForestClassifier(n_estimators = 64, n_jobs = -1, class_weight = 'balanced')
+    RFC_malware = RandomForestClassifier(n_estimators = N, n_jobs = -1, class_weight = 'balanced')
     RFC_malware.fit(X_train_malware, t_train_malware)
     
     print "# Predicting whatever we had not classified as None before..."
     pred_malware = RFC_malware.predict(X_test_malware)
 
-    for predicted, ID in zip(pred_malware, valid_ids_malware):
+    for predicted, ID in zip(pred_malware, test_ids_malware):
         final_prediction.append(predicted)
         final_ids.append(ID)
 
     y_pred = [x for (y,x) in sorted(zip(final_ids, final_prediction))]
-    y_true = [x for (y,x) in sorted(zip(valid_ids, t_valid))]
+    y_true = [x for (y,x) in sorted(zip(test_ids, t_test))]
 
-    print "# Printing confusion matrix..."
-    confmat = confusion_matrix(y_true, y_pred)
-    print np.sum(confmat)
-
+    print "# Plotting confusion matrix..."
     # compute and plot confusion matrix
+    confmat = confusion_matrix(y_true, y_pred)
+    cm_normalized = confmat.astype('float') / confmat.sum(axis=1)[:, np.newaxis]
+
     np.set_printoptions(precision=2)
-    print('Confusion matrix, without normalization')
-    print(confmat)
+    print('Confusion matrix, normalized')
+    print(cm_normalized)
     plt.figure()
-    plot_confusion_matrix(confmat)
+    plot_confusion_matrix(cm_normalized)
     # plt.show()
-    plt.savefig("confmatrix.png")
+    plt.savefig("confmatrix_normalized.png")
 
-        count = 0
+    count = 0
     correct = 0
-    for pred, true in zip(y_pred, y_true):
-        if pred == true:
-            correct += 1
+    for true, pred in zip(y_true, y_pred):
         count += 1
+        if true == pred:
+            correct += 1
 
-    print "# Percentage of correct predictions:"
+    print "# Percentage of correct classifications:"
     print float(correct)/count * 100
 
     print "# Done!"

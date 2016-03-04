@@ -9,6 +9,7 @@ from scipy import sparse
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import xgboost as xgb
+import util
 
 def plot_confusion_matrix(cm, title='Confusion Matrix', cmap=plt.cm.Blues):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)

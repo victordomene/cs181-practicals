@@ -51,7 +51,7 @@ def main():
     print(cm_normalized)
     plt.figure()
     plot_confusion_matrix(cm_normalized)
-    # plt.show()
+    # plt.show()..
     plt.savefig("confmatrix_normalized.png")
 
     count = 0

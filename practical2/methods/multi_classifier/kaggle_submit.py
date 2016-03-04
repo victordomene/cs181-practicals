@@ -30,7 +30,7 @@ def main():
     # train a Random Forest on the data, using a binary classification only
     # (between Malware and None)
     print "# Training RandomForestClassifier with n_estimators = {}, for a binary classification between Malware or None...".format(N)
-    RFC_bin = RandomForestClassifier(n_estimators = 64, n_jobs = -1)
+    RFC_bin = RandomForestClassifier(n_estimators = N, n_jobs = -1)
     RFC_bin.fit(X_train, t_train_bin)
 
     print "# Predicting Malware vs None..."

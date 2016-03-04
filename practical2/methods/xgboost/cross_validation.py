@@ -7,17 +7,7 @@ except ImportError:
 import numpy as np
 from scipy import sparse
 import xgboost as xgb
-
-def plot_confusion_matrix(cm, title='Confusion Matrix', cmap=plt.cm.Blues):
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(util.malware_classes))
-    plt.xticks(tick_marks, util.malware_classes, rotation=45)
-    plt.yticks(tick_marks, util.malware_classes)
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+import util
 
 def main():
     # fetch features for training and valid data
