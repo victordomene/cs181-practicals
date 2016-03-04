@@ -31,6 +31,8 @@ def main():
     print "# Average Score"
     print sum(scores)/len(scores)
 
+    print "# Done!"
+
 if __name__ == "__main__":
     main()
     

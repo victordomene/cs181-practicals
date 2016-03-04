@@ -1,6 +1,5 @@
 import os
 import cPickle as pickle
-import random
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -70,6 +69,8 @@ def main():
 
     print "# Percentage of correct classifications:"
     print float(correct)/count * 100
+
+    print "# Done!"
 
 if __name__ == "__main__":
     main()

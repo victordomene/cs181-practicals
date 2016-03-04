@@ -1,14 +1,11 @@
 import os
 import cPickle as pickle
-import random
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
 import numpy as np
 from scipy import sparse
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
 import xgboost as xgb
 
 def plot_confusion_matrix(cm, title='Confusion Matrix', cmap=plt.cm.Blues):
@@ -42,6 +39,8 @@ def main():
        metrics={'merror'}, seed = 0, show_stdv = False)
 
     print scores
+
+    print "# Done!"
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,5 @@
 import os
 import cPickle as pickle
-import random
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -13,7 +12,6 @@ from sklearn.ensemble import RandomForestClassifier
 import util
 
 N = 40
-validation_size = 0.2
 
 def plot_confusion_matrix(cm, title='Confusion Matrix', cmap=plt.cm.Blues):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
@@ -65,6 +63,8 @@ def main():
 
     print "# Percentage of correct classifications:"
     print float(correct)/count * 100
+
+    print "# Done!"
 
 if __name__ == "__main__":
     main()

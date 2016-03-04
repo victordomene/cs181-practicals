@@ -128,8 +128,12 @@ def main():
 
     # fetch features for training and valid data
     # substitute for a pickle load, for training data!
-    X_train, t_train, train_ids = create_data_matrix(0, 2000, TRAIN_DIR)
-    X_valid, t_valid, valid_ids = create_data_matrix(2000, 4000, TRAIN_DIR)
+    print "# Loading features..."
+    X_train_all, t_train_all, train_all_ids = pickle.load(open("../../features/all_tags/train.pickle"))
+
+    print "# Separating features into two simple sets..."
+    X_train, t_train, train_ids = X_train_all[:2000], t_train_all[:2000], train_all_ids[:2000]
+    X_test, t_test, test_ids = X_train_all[2000:], t_train_all[2000:], train_all_ids[:2000]
 
     # separates the t_train only between 0 and 1, where 0 is None and 1 
     # is any Malware
@@ -139,25 +143,27 @@ def main():
 
     # train a Random Forest on the data, using a binary classification only
     # (between Malware and None)
+    print "# Training RandomForestClassifier with n_estimators = {}, for a binary classification between Malware or None...".format(N)
     RFC_bin = RandomForestClassifier(n_estimators = 64, n_jobs = -1)
     RFC_bin.fit(X_train, t_train_bin)
 
     # predict whether the validation inputs are Malwares or Nones
-    pred_bin = RFC_bin.predict(X_valid)
+    print "# Predicting Malware vs None..."
+    pred_bin = RFC_bin.predict(X_test)
 
     # fetch all datapoints that we considered as Malwares
-    X_valid_malware = []
+    X_test_malware = []
     t_valid_malware = []
     valid_ids_malware = []
 
-    for predicted, ID, true, features in zip(pred_bin, valid_ids, t_valid, X_valid):
+    for predicted, ID, true, features in zip(pred_bin, valid_ids, t_valid, X_test):
         # if we predicted None, this goes to our final prediction
-        # otherwise, we add it to X_valid_malware
+        # otherwise, we add it to X_test_malware
         if predicted == 0:
             final_prediction.append(none)
             final_ids.append(ID)
         else:
-            X_valid_malware.append(features)
+            X_test_malware.append(features)
             t_valid_malware.append(true)
             valid_ids_malware.append(ID)
 
@@ -174,9 +180,12 @@ def main():
     np.asarray(t_train_malware)
 
     # train a Random Forest on the data, using now only the Malwares
+    print "# Training another RandomForestClassifier with n_estimators = {}, for a multi-class classification between only Malwares..."
     RFC_malware = RandomForestClassifier(n_estimators = 64, n_jobs = -1, class_weight = 'balanced')
     RFC_malware.fit(X_train_malware, t_train_malware)
-    pred_malware = RFC_malware.predict(X_valid_malware)
+    
+    print "# Predicting whatever we had not classified as None before..."
+    pred_malware = RFC_malware.predict(X_test_malware)
 
     for predicted, ID in zip(pred_malware, valid_ids_malware):
         final_prediction.append(predicted)
@@ -185,17 +194,7 @@ def main():
     y_pred = [x for (y,x) in sorted(zip(final_ids, final_prediction))]
     y_true = [x for (y,x) in sorted(zip(valid_ids, t_valid))]
 
-    # count = 0
-    # correct = 0
-    # for pred, true in zip(y_pred, y_true):
-    #     if pred == true:
-    #         correct += 1
-    #     count += 1
-
-    # print "Percentage:"
-    # print float(correct)/count * 100
-
-    # add # of correct stuff in Malwares
+    print "# Printing confusion matrix..."
     confmat = confusion_matrix(y_true, y_pred)
     print np.sum(confmat)
 
@@ -208,8 +207,17 @@ def main():
     # plt.show()
     plt.savefig("confmatrix.png")
 
-    # save to prediction file!
-    # util.write_predictions(final_prediction, final_ids, "predictions.csv")
+        count = 0
+    correct = 0
+    for pred, true in zip(y_pred, y_true):
+        if pred == true:
+            correct += 1
+        count += 1
+
+    print "# Percentage of correct predictions:"
+    print float(correct)/count * 100
+
+    print "# Done!"
 
 if __name__ == "__main__":
     main()

@@ -80,7 +80,7 @@ def call_feats(tree):
         print counter
 
     # uses likely_syscalls here
-    good_calls = util.all_syscalls
+    good_calls = util.likely_syscalls
 
     call_counter = {}
     for el in tree.iter():
@@ -102,10 +102,10 @@ def call_feats(tree):
 
 def main():
     X_train, t_train, train_ids = create_data_matrix(0, 4000, TRAIN_DIR)
-    pickle.dump((X_train, t_train, train_ids), open("all_tags/train.pickle", "wb"))
+    pickle.dump((X_train, t_train, train_ids), open("likely_tags/train.pickle", "wb"))
 
     X_test, t_test, test_ids = create_data_matrix(0, 4000, TEST_DIR)
-    pickle.dump((X_test, t_test, test_ids), open("all_tags/test.pickle", "wb"))
+    pickle.dump((X_test, t_test, test_ids), open("likely_tags/test.pickle", "wb"))
 
 if __name__ == "__main__":
     main()

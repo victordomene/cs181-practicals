@@ -1,11 +1,4 @@
-# Example Feature Extraction from XML Files
-# We count the number of specific system calls made by the programs, and use
-# these as our features.
-
-# This code requires that the unzipped training set is in a folder called "train". 
-
 import os
-import re
 import cPickle as pickle
 try:
     import xml.etree.cElementTree as ET
@@ -35,6 +28,8 @@ def main():
     t_pred = [prob.tolist().index(max(prob)) for prob in t_probs]
 
     util.write_predictions(t_pred, test_ids, "predictions.csv")
+
+    print "# Done!"
 
 if __name__ == "__main__":
     main()
