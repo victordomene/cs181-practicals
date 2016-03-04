@@ -61,13 +61,18 @@ X_test_bin = vectorizer.transform(open(os.path.join("train", f)).read() for f in
 print "Got X_test_bin"
 
 ## use Random Forest to fit data
-print "SVM started working its ass off to help you"
-RFC = RandomForestClassifier(n_estimators = 1024, n_jobs = -1)
-RFC.fit(X_train_bin, Y_train_bin)
+
+## JOSH HERE YOU CHANGE THE FIRST ALGORITHM:
+
+print "svm.SVC(C = 1000.0, kernel='linear') started working its ass off to help you"
+SVM = svm.SVC(C = 1000.0, kernel='linear')
+SVM.fit(X_train_bin, Y_train_bin)
 print "Done"
 
+## STOP CHANGE
+
 ## get predictors
-Y_test_bin = RFC.predict(X_test_bin)
+Y_test_bin = SVM.predict(X_test_bin)
 
 print np.count_nonzero(Y_test_bin)
 
@@ -104,81 +109,85 @@ print float(correct_malware)/count_malware * 100
 print "Percentage correct none:"
 print float(correct_none)/count_none * 100
 
-print "Final Percentage Correct:"
+print "Final Percentage Correct for Bin:"
 print float(correct_none + correct_malware)/(count_none + count_malware) * 100
 
 
-# ## NOW START CLASSIFICATION BASED ON MALWARE ONLY
+## NOW START CLASSIFICATION BASED ON MALWARE ONLY
 
-# ## the malware train set will only contain actual malwares
-# train_malware_files = [f for f in train_bin_files[2100:] if f.split(".", 2)[1] != "None"]
-# ## the malware test set will only contain those files that were classified as malware
-# test_malware_files = [f for f in train_bin_files[:2100] if Y_test_bin[train_bin_files.index(f)] == 1]
+## the malware train set will only contain actual malwares
+train_malware_files = [f for f in train_bin_files[2100:] if f.split(".", 2)[1] != "None"]
+## the malware test set will only contain those files that were classified as malware
+test_malware_files = [f for f in train_bin_files[:2100] if Y_test_bin[train_bin_files.index(f)] == 1]
 
-# ## Get ifidf matrix for malware files
-# print "Getting X_train_malware for you, bro. Hold on...\n"
-# vectorizer = TfidfVectorizer(encoding='latin1')
-# X_train_malware = vectorizer.fit_transform(open(os.path.join("train", f)).read() for f in train_malware_files)
-# print "Got X_train_malware. Happy?\n"
+## Get ifidf matrix for malware files
+print "Getting X_train_malware for you, bro. Hold on...\n"
+vectorizer = TfidfVectorizer(encoding='latin1')
+X_train_malware = vectorizer.fit_transform(open(os.path.join("train", f)).read() for f in train_malware_files)
+print "Got X_train_malware. Happy?\n"
 
-# Y_train_malware = []
-# for f in train_malware_files:
-# 	file_malware = f.split(".", 2)[1]
-# 	Y_train_malware.append(malware_classes.index(file_malware))
+Y_train_malware = []
+for f in train_malware_files:
+	file_malware = f.split(".", 2)[1]
+	Y_train_malware.append(malware_classes.index(file_malware))
 
-# ## make Y_train_malware a np array instead of list
-# np.asarray(Y_train_malware)
+## make Y_train_malware a np array instead of list
+np.asarray(Y_train_malware)
 
-# ## define ifidf matrix for test set. Use malware only
-# print "Getting X_test_malware for you, bro. Hold on...\n"
-# X_test_malware = vectorizer.transform(open(os.path.join("train", f)).read() for f in test_malware_files)
-# print "Got X_test_malware"
+## define ifidf matrix for test set. Use malware only
+print "Getting X_test_malware for you, bro. Hold on...\n"
+X_test_malware = vectorizer.transform(open(os.path.join("train", f)).read() for f in test_malware_files)
+print "Got X_test_malware"
 
-# ## use Random Forest to fit data
-# print "RF started working its ass off to help you"
-# #RFC = RandomForestClassifier(n_estimators = 256, n_jobs = -1)
+## JOSH HERE YOU CHANGE THE SECOND ALGO
+
+## use Random Forest to fit data
+print "RFC started working its ass off to help you"
+RFC = RandomForestClassifier(n_estimators = 256, n_jobs = -1)
 # clf = neighbors.KNeighborsClassifier(n_neighbors=45)
-# clf.fit(X_train_malware, Y_train_malware)
-# print "Done"
+RFC.fit(X_train_malware, Y_train_malware)
+print "Done"
 
-# ## get predictors
-# Y_test_malware = clf.predict(X_test_malware)
+## STOP CHANGING IT
 
-# ## NOW WE CONCATENATE THE TWO RESULTS
+## get predictors
+Y_test_malware = RFC.predict(X_test_malware)
 
-# ## The philosphy is that files predicted to be non-malwares remain non-malwares
-# ## and malwares follow the malware prediction
+## NOW WE CONCATENATE THE TWO RESULTS
 
-# Y_test = []
-# malware_count = 0
-# for f in train_bin_files[:2100]:
-# 	if (Y_test_bin[train_bin_files.index(f)] == 0):
-# 		Y_test.append(malware_classes.index("None"))
-# 	else:
-# 		Y_test.append(Y_test_malware[malware_count])
-# 		malware_count += 1
+## The philosphy is that files predicted to be non-malwares remain non-malwares
+## and malwares follow the malware prediction
 
-# np.asarray(Y_test)
+Y_test = []
+malware_count = 0
+for f in train_bin_files[:2100]:
+	if (Y_test_bin[train_bin_files.index(f)] == 0):
+		Y_test.append(malware_classes.index("None"))
+	else:
+		Y_test.append(Y_test_malware[malware_count])
+		malware_count += 1
 
-# # ids_test = []
-# # for f in test_files[1:]:
-# # 	ID = f.split(".", 1)[0]
-# # 	ids_test.append(ID)
+np.asarray(Y_test)
+
+# ids_test = []
+# for f in test_files[1:]:
+# 	ID = f.split(".", 1)[0]
+# 	ids_test.append(ID)
 
 
-# Y_true = []
-# for f in train_bin_files[:2100]:
-# 	file_malware = f.split(".", 2)[1]
-# 	Y_true.append(malware_classes.index(file_malware))
+Y_true = []
+for f in train_bin_files[:2100]:
+	file_malware = f.split(".", 2)[1]
+	Y_true.append(malware_classes.index(file_malware))
 
-# count = 0
-# correct = 0
-# for pred, true in zip(Y_test, Y_true):
-# 	if (pred == true):
-# 		correct += 1
-# 	count += 1
+count = 0
+correct = 0
+for pred, true in zip(Y_test, Y_true):
+	if (pred == true):
+		correct += 1
+	count += 1
 
-# print "Percentage correct:"
-# print float(correct)/count * 100
+print "Total Percentage correct:"
+print float(correct)/count * 100
 
-# # # write_predictions(Y_test, ids_test, "bag_predictions_sgd.csv")
+# # write_predictions(Y_test, ids_test, "bag_predictions_sgd.csv")
