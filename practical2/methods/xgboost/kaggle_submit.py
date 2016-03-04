@@ -27,7 +27,7 @@ def main():
     t_probs = bst.predict(dout)
     t_pred = [prob.tolist().index(max(prob)) for prob in t_probs]
 
-    util.write_predictions(t_pred, test_ids, "predictions.csv")
+    util.write_predictions(t_pred, test_ids, "../../predictions/xgboost_predictions.csv")
 
     print "# Done!"
 

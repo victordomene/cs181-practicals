@@ -17,7 +17,7 @@ def main():
     RFC.fit(X_train, t_train)
     pred = RFC.predict(X_test)
 
-    util.write_predictions(pred, test_ids, "predictions.csv")
+    util.write_predictions(pred, test_ids, "../../predictions/single_RF_predictions.csv")
 
 if __name__ == "__main__":
     main()
