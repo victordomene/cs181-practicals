@@ -1,6 +1,5 @@
 import csv
 import gzip
-import musicbrainzngs
 
 train_fh = gzip.open('../data/train.csv.gz')
 train_csv = csv.reader(train_fh, delimiter=',', quotechar='"')
