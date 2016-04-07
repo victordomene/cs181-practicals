@@ -5,7 +5,7 @@ import pickle
 
 from sklearn.ensemble import RandomForestRegressor
 
-NUM_ESTIMATORS = 16
+NUM_ESTIMATORS = 10
 
 # Predict via the user-specific median.
 # If the user has no data, use the global median.
@@ -42,6 +42,8 @@ user_index = 0
 # Load the training data.
 train_data = {}
 
+# count = 0
+
 with gzip.open(train_file, 'r') as train_fh:
     train_csv = csv.reader(train_fh, delimiter=',', quotechar='"')
     next(train_csv, None)
@@ -49,6 +51,11 @@ with gzip.open(train_file, 'r') as train_fh:
         user   = row[0]
         artist = row[1]
         plays  = row[2]
+
+#	if count == 100000:
+#		break
+
+#	count += 1
     
         if not user in train_data:
             train_data[user] = {}
@@ -92,11 +99,10 @@ print "# Data loaded."
 print "# Initializing and fitting one random forest per artist..."
 
 # We create one RandomForestRegressor for each artist
-random_forests = [RandomForestRegressor(n_estimators = NUM_ESTIMATORS) for _ in xrange(len(artists))]
+random_forests = [RandomForestRegressor(n_estimators = NUM_ESTIMATORS, n_jobs = -1) for _ in xrange(len(artists))]
 
 for artist_index, forest in enumerate(random_forests):
-    if artist_index % 100 == 0:
-        print "Current artist: {}".format(artist_index)
+    print "Current artist: {}".format(artist_index)
 
     # Use np indexing to fetch only users who listened to this artist;
     # more than that is useless for this particular tree.
@@ -105,7 +111,7 @@ for artist_index, forest in enumerate(random_forests):
     Y_artist = X_artist[:, artist_index]
 
     # This column is Y_artist, so we remove it from the training step
-    np.delete(X_artist, artist_index)
+    np.delete(X_artist, artist_index, 1)
 
     forest.fit(X_artist, Y_artist)
 
@@ -173,7 +179,7 @@ with gzip.open(test_file, 'r') as test_fh:
                 X_train_user.reshape(1, -1)
 
                 # Finally predict, given user's history
-                prediction = forest.predict(X_train_user)
+                prediction = forest.predict(X_train_user).item(0)
 
             soln_csv.writerow([id, prediction])
 
