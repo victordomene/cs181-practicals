@@ -96,7 +96,6 @@ with gzip.open(test_file) as test_fh:
                               quotechar='"',
                               quoting=csv.QUOTE_MINIMAL)
         soln_csv.writerow(['Id', 'plays'])
-
         for row in test_csv:
             id     = row[0]
             user   = row[1]
@@ -106,7 +105,7 @@ with gzip.open(test_file) as test_fh:
 
             if user in profiles_data:
                 profile_repr = profiles_data[user]['sex'] + profiles_data[user]['age'] + profiles_data[user]['country']
-                result = demographic_totals[profile_repr]
+                result = demographic_medians[profile_repr]
             elif user in user_medians:
                 result = user_medians[user]
             else:
