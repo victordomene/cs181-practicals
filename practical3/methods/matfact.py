@@ -3,15 +3,15 @@ import csv
 import gzip
 import pickle
 
-from sklearn.ensemble import RandomForestRegressor
+import nimfa
 
-NUM_ESTIMATORS = 10
+NUM_FEATURES = 5
 
 # Predict via the user-specific median.
 # If the user has no data, use the global median.
 users_file = '../data/profiles.csv.gz'
-train_file = '../processed_data/centered_train.csv'
-counts_file = '../processed_data/total_counts.csv'
+train_file = '../data/train.csv.gz'
+test_file = '../data/test.csv.gz'
 soln_file  = '../predictions/random_forests.csv'
 
 # Load the users data. !# CURRENTLY NOT USED
@@ -52,10 +52,10 @@ with gzip.open(train_file, 'r') as train_fh:
         artist = row[1]
         plays  = row[2]
 
-#	if count == 100000:
-#		break
+        # count += 1
 
-#	count += 1
+        # if count == 30000:
+        #     break
     
         if not user in train_data:
             train_data[user] = {}
@@ -96,26 +96,17 @@ for user in xrange(len(users)):
 
 print "# Data loaded."
 
-print "# Initializing and fitting one random forest per artist..."
+lsnmf = nimfa.Lsnmf(X_train, seed="random_vcol", rank=NUM_FEATURES, max_iter=3000, version='r', eta=1., beta=1e-4, i_conv=100, w_min_change=0)
 
-# We create one RandomForestRegressor for each artist
-random_forests = [RandomForestRegressor(n_estimators = NUM_ESTIMATORS, n_jobs = -1) for _ in xrange(len(artists))]
+fit = lsnmf()
 
-for artist_index, forest in enumerate(random_forests):
-    print "Current artist: {}".format(artist_index)
+sparse_w, sparse_h = fit.fit.sparseness()
 
-    # Use np indexing to fetch only users who listened to this artist;
-    # more than that is useless for this particular tree.
+W = fit.basis()
+H = fit.coef()
 
-    X_artist = X_train[X_train[:, artist_index] != 0]
-    Y_artist = X_artist[:, artist_index]
-
-    # This column is Y_artist, so we remove it from the training step
-    np.delete(X_artist, artist_index, 1)
-
-    forest.fit(X_artist, Y_artist)
-
-print "# RandomForestRegressors are all ready."
+print W.shape
+print H.shape
 
 print "# Starting predictions..."
 
@@ -154,9 +145,6 @@ with gzip.open(test_file, 'r') as test_fh:
                 soln_csv.writerow([id, prediction])
                 continue
 
-            if int(id) % 1000 == 0:
-                print "Current prediction: {}".format(id)
-
             # If we already have the answer, we don't want to try to
             # predict it again!
             prediction = None
@@ -164,22 +152,11 @@ with gzip.open(test_file, 'r') as test_fh:
             if X_train[user, artist] != 0:
                 prediction = X_train[user, artist]
             else:
-                forest = random_forests[artist]
-
-                # Be careful to use np.delete on a copy, not on X_train
-                # itself! That would be a bad idea
-                X_train_user = X_train[user]
-
-                # Remove the "0" we have for the artist (otherwise,
-                # we would not be in this if case; it's 0 here)
-                np.delete(X_train_user, artist)
-
-                # We have a single sample here, so we have to do a reshape
-                # to silence a couple warnings...
-                X_train_user.reshape(1, -1)
-
                 # Finally predict, given user's history
-                prediction = forest.predict(X_train_user).item(0)
+                prediction = int(np.array(W[user, :]).dot(np.array(H[:, artist])).item(0))
+
+            if int(id) % 1000 == 0:
+                print "Current prediction: {}, with {}".format(id, prediction)
 
             soln_csv.writerow([id, prediction])
 

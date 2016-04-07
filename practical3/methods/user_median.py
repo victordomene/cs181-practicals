@@ -14,7 +14,6 @@ soln_file  = '../data/user_median.csv.gz'
 train_data = {}
 with gzip.open(train_file, 'r') as train_fh:
     train_csv = csv.reader(train_fh, delimiter=',', quotechar='"')
-    next(train_csv, None)
     for row in train_csv:
         user   = row[0]
         artist = row[1]
