@@ -3,16 +3,14 @@ import csv
 import gzip
 import pickle
 
-import nimfa
-
-NUM_FEATURES = 30
+from manual_fact import ManualFactorizer
 
 # Predict via the user-specific median.
 # If the user has no data, use the global median.
 users_file = '../data/profiles.csv.gz'
 train_file = '../data/train.csv.gz'
 test_file = '../data/test.csv.gz'
-soln_file  = '../predictions/random_forests.csv'
+soln_file  = '../predictions/vaz.csv'
 
 # Load the users data. !# CURRENTLY NOT USED
 # users = {}
@@ -42,7 +40,7 @@ user_index = 0
 # Load the training data.
 train_data = {}
 
-# count = 0
+count = 0
 
 with gzip.open(train_file, 'r') as train_fh:
     train_csv = csv.reader(train_fh, delimiter=',', quotechar='"')
@@ -52,28 +50,28 @@ with gzip.open(train_file, 'r') as train_fh:
         artist = row[1]
         plays  = row[2]
 
-        # count += 1
+	# count += 1
 
-        # if count == 30000:
-        #     break
+	# if count == 10000:
+	    # break
     
         if not user in train_data:
             train_data[user] = {}
+	    
+	if not artist in artists:
+	    artists[artist] = artists_index
+	    artists_index += 1
         
-        if not artist in artists:
-            artists[artist] = artists_index
-            artists_index += 1
-
-        if not user in users:
-            users[user] = user_index
-            user_index += 1
-
-        train_data[user][artist] = int(plays)
+        train_data[user][artist] = int(plays) / 100.0
 
 # X_train will be converted into a np array, so we can use it in RandomForestRegressor
 X_train = []
 
 for user, plays_for_artists in train_data.iteritems():
+    if not user in users:
+        users[user] = user_index
+        user_index += 1
+    
     plays_for_user = [0 for _ in artists.keys()]
 
     # Here we use artists[aritst] to index artist (a weird hash) into a specific
@@ -96,17 +94,9 @@ for user in xrange(len(users)):
 
 print "# Data loaded."
 
-lsnmf = nimfa.Lsnmf(X_train, seed="random_vcol", rank=NUM_FEATURES, max_iter=3000, version='r', eta=1., beta=1e-4, i_conv=100, w_min_change=0)
+est = ManualFactorizer()
 
-fit = lsnmf()
-
-sparse_w, sparse_h = fit.fit.sparseness()
-
-W = fit.basis()
-H = fit.coef()
-
-print W.shape
-print H.shape
+W, H = est.factorize(X_train, artists, users)
 
 print "# Starting predictions..."
 
@@ -153,9 +143,9 @@ with gzip.open(test_file, 'r') as test_fh:
                 prediction = X_train[user, artist]
             else:
                 # Finally predict, given user's history
-                prediction = int(np.array(W[user, :]).dot(np.array(H[:, artist])).item(0))
+		prediction = int(np.array(W[user]).dot(np.array(H[artist])).item(0) * 100)
 
-            if int(id) % 1000 == 0:
+            if int(id) % 100000 == 0:
                 print "Current prediction: {}, with {}".format(id, prediction)
 
             soln_csv.writerow([id, prediction])
