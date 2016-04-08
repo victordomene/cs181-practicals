@@ -43,7 +43,7 @@ class ManualFactorizer:
 		self.W = np.array(self.bias_for_user)
 		self.H = np.array([1.0 for _ in xrange(X.shape[1])])
 
-		max_iter = 7
+		max_iter = 10
 
 		for i in xrange(max_iter):
 			print "Doing {}-th iteration...".format(i)

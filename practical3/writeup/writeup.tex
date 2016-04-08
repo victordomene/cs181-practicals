@@ -31,7 +31,7 @@ In this practical, we performed machine learning on truncated lists of user / ar
 \section{Technical Approach}
 \subsection{Dependencies}
 
-We made use of a number of technologies in implementing this practical. We used Python data analysis libraries including Pandas, IPython Notebook, Numpy, Scikit-learn, and Nimfa which was installed through the Python distribution Anaconda. We used the open source library ---- for feature engineering. Additionally, we used R for data analysis and plot generation.
+We made use of a number of technologies in implementing this practical. We used Python data analysis libraries including Pandas, IPython Notebook, Numpy, Scikit-learn, and Nimfa which was installed through the Python distribution Anaconda. Additionally, we used R for data analysis and plot generation.
 
 \subsection{Data \& Validation}
 Although we were provided with a large amount of sample data in this practical (4.1M user/artist pairs in train data, 4.2M user/artist pairs in test data), we were unable to perform any cross validation due to the incomplete nature of the train data. To control for overfitting, we centered the data before performing any learning (described below).
@@ -98,9 +98,10 @@ However, upon reading the demographic information in more depth, we discovered s
 We next conducted some basic feature engineering, although as described above, we had difficulty using it in some of our algorithms. We first started with the musicbrainz-python API, but we could only download around $3$ entires per second, which is too slow for the massive dataset we have. Instead, we set up a local server using the musicbrainz data (database size: 2GB), to speed up the computation. We extracted the tags in the tag-list portion of the XML describing each artist, which represent the genres of each artist. This allowed us to narrow the data from $2000$ classes to just a few for some analyses.
 
 \subsection{Algorithms}
-We tested a wide variety of learning algorithms for this practical. We could not use cross-validation due to the nature of this practical, so all results are reported as the scores provided by Kaggle.
+We tested a wide variety of learning algorithms for this practical. We could not use cross-validation due to the nature of this practical, so all results are reported as the scores provided by Kaggle. However, we did compute reconstruction errors for the training data for some of the methods (in particular, for those that seemed to work best).
+
 \subsubsection{Per-user Median}
-We submitted the per-user median, according to the sample code provided by staff. The Kaggle score was ----.
+We submitted the per-user median, according to the sample code provided by staff. The Kaggle score was $137.79$. This approach yielded a $129.54$ reconstruction error.
 
 \subsubsection{Global Median}
 We submitted the global median, according to the sample code provided by staff. The Kaggle score was ----.
@@ -122,7 +123,11 @@ In particular, we used the class called sklearn.decomposition.NMF. Surprisingly,
 This library works similar to the scikit-learn one, however it exposes the information we require! It also has many tunable parameters. When assuming low matrix rank, the algorithm terminates in reasonable time, but we achieve a bad Kaggle score around ----.  In fact, Nimfa has a method for automatically determining the proper rank, but we did not make use of that method because it takes a long time. (Essentially, it tries the algorithm on many possible ranks and looks at whatever gives the best objective function.) On high rank though, the algorithm takes an unreasonable amount of time - we terminated our run of rank$=30$ (the default) after the algorithm did not terminate when running overnight. The internal workings here are very abstracted from us, we sought to code our own matrix factorization.
 
 {\bf Manual Matrix Factorization:}
-Victor Domene.
+After working on the methods described above, we started to think that the data has not much information to be truly learned. As a consequence, we thought that the simplest possible model would be able to give us better results. We then came up with the following idea. Each user has a "user frequency", while each artist has a "popularity". The number of predicted plays is simply the product of these two. To optimize, we used stochastic gradient descent, as specified in the \href{https://datajobs.com/data-science-repo/Recommender-Systems-[Netflix].pdf}{Vollinsky paper}. In particular, we followed the Alternating Least Squares approach. In the end, this method is simply a matrix factorization for a single feature (namely, rank$=1$ in Nimfa), but since we were not sure about the approach that these given libraries used, we hoped that by manually facturing our factorization we would get some improvements.
+
+To be able to evaluate how good the model is, we calculated the reconstruction error for our predictions. We tried several implementations. First, we tried centering the data around the median. This gave us a reconstruction error of $144.97$. Then, we tried instead of centering, adding a bias term to the predictions and objective function; this resulted in a reconstruction error of $142.31$. Then, we decided to not use biases or centering, but instead to initialize the factorization matrices in a clever way: for each user, the frequency is its median, and for each artist, its popularity is $1$. This naive approach proved the most successful.
+
+For $20$ iterations of our method, the reconstruction error was $128.16$. After $30$ iterations, the reconstruction error was $127.98$. The corresponding Kaggle score was $136.30$, which gave us the fourth position in the Public Leaderboard (as of 2pm on Friday). 
 
 \section{Code}
 
