@@ -135,8 +135,9 @@ class SwingyMonkey:
         delta_x = state['tree']['dist']
         delta_y = state['monkey']['bot'] - state['tree']['bot']
         V = state['monkey']['vel']
-        state_info = [delta_x, delta_y, V, pow(delta_x, 2), pow(delta_y, 2), pow(V, 2), 
-                pow(delta_x, 3), pow(delta_y, 3), pow(V, 3)]
+        ##state_info = [delta_x, delta_y, V, pow(delta_x, 2), pow(delta_y, 2), pow(V, 2), 
+                ##pow(delta_x, 3), pow(delta_y, 3), pow(V, 3)]
+        state_info = [delta_x, delta_y, V]
         action = 0
 
         # Process input events.
@@ -147,10 +148,9 @@ class SwingyMonkey:
                 self.vel = npr.poisson(self.impulse)
                 self.hook = self.screen_width
                 action = 1
-            print (state_info, action)
 
         train = str(state_info) + ";" + str(action)
-        f = open("training.txt", "a+")
+        f = open("training3d_2nd.txt", "a+")
         f.write(train + "\n")
         f.close()
 

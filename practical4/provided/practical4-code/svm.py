@@ -2,6 +2,7 @@
 import numpy as np
 import numpy.random as npr
 from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
 
 from SwingyMonkey import SwingyMonkey
 
@@ -16,10 +17,10 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
 
-        self.X_train = np.zeros(shape=(30, 9), dtype=int)
-        self.Y_train = np.empty(shape=30, dtype=int)
+        self.X_train = np.zeros(shape=(1892, 3), dtype=int)
+        self.Y_train = np.empty(shape=1892, dtype=int)
 
-        with open('training.txt', 'r') as f:
+        with open('training3d_2nd.txt', 'r') as f:
             count = 0
             for line in f:
                 x = line.split(';')[0]
@@ -40,6 +41,9 @@ class Learner(object):
 
         self.clf = svm.SVC(kernel='linear')
         self.clf.fit(self.X_train, self.Y_train)
+
+        # self.clf = RandomForestClassifier()
+        # self.clf.fit(self.X_train, self.Y_train)
 
         # print "count_lines = %d" % count
         # print "Y_train size = %d" % len(self.Y_train)
@@ -73,8 +77,9 @@ class Learner(object):
         delta_x = state['tree']['dist']
         delta_y = state['monkey']['bot'] - state['tree']['bot']
         V = state['monkey']['vel']
-        state_info = [delta_x, delta_y, V, pow(delta_x, 2), pow(delta_y, 2), pow(V, 2), 
-                pow(delta_x, 3), pow(delta_y, 3), pow(V, 3)]
+        # state_info = [delta_x, delta_y, V, pow(delta_x, 2), pow(delta_y, 2), pow(V, 2), 
+        #         pow(delta_x, 3), pow(delta_y, 3), pow(V, 3)]
+        state_info = [delta_x, delta_y, V,]
 
         state_info = np.asarray(state_info)
         state_info = state_info.reshape(1, -1)
