@@ -4,10 +4,23 @@ import numpy.random as npr
 
 from SwingyMonkey import SwingyMonkey
 
+# Constants
+SCREEN_WIDTH = 600
+SCREEN_HEIGHT = 400
+MAX_VELOCITY = 25
+
+# Factors for experimentation
+BIN_V = 1
+BIN_DT = 1 # Dist tree
+BIN_DB = 1 # Dist bottom
+GAMMA = 0.1 # discount factor
+EPS = 0.01 # e-greedy start parameter
+EPS_CHANGE = 1.001
+ALPHA = 0.01
 
 class Learner(object):
     '''
-    This agent jumps randomly.
+    This agent uses Q-learning.
     '''
 
     def __init__(self):
@@ -15,35 +28,123 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
 
+        self.epoch = 0
+        self.iters = 0 # number of iterations in the epoch
+
+        self.eps = EPS
+        '''
+        Q matrix:
+        ndarray of dimensions A x D x T x M
+
+        A: action to perform
+        D: pixels to next tree
+        T: height of bottom of tree
+        M: height of the monkey
+
+        Before updating the Q function, the wrapper function _transform
+        needs to be run on the data.
+        '''
+
+        # TODO: What is the best way to initialize these functions?
+
+        # Q Matrix
+        # self.Q = np.random.choice([-0.1,-0.08,-0.06,-0.01,0,0.1,0.08,0.06,0.01], size=(2, self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT), self._transform('h', SCREEN_HEIGHT)))
+
+        self.Q = np.zeros((2, self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT), self._transform('h', SCREEN_HEIGHT), self._transform('v', MAX_VELOCITY * 2)))
+
+        self.k = np.zeros((2, self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT), self._transform('h', SCREEN_HEIGHT), self._transform('v', MAX_VELOCITY * 2)))
+
+        # Number of times actions have been taken
+        # Used for epsilon greedy
+        # self.k = np.zeros((2, self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT), self._transform('h', SCREEN_HEIGHT)))
+
     def reset(self):
         self.last_state  = None
         self.last_action = None
         self.last_reward = None
+
+    # a collection of wrappers over velocity, distances, etc.
+    # that we can later use for binning and preprocessing.
+
+    def _v(self, v):
+        return v
+
+    def _dist_tree(self, d):
+        return d
+
+    def _dist_bot(self, d):
+        return d
+
+    def _transform(self, t, d):
+        if t == 'v': # 'velocity' :
+            return d / 2
+        elif t == 'h': # height
+            return d / 10
+        elif t == 'w': # width
+            return d / 25
+        return d
+
+    def get_reward(self, r):
+        return r + 1
+
+    def random_move(self):
+        return npr.rand() < 0.5
 
     def action_callback(self, state):
         '''
         Implement this function to learn things and take actions.
         Return 0 if you don't want to jump and 1 if you do.
         '''
+        self.iters += 1
+        # if self.iters == 10:
+        # print self.Q
+        # self.eps /= EPS_CHANGE
+        # print state
+        # extract information
+        d_tree = self._transform('w', state['tree']['dist'])
+        if d_tree < 0:
+            d_tree = 0
 
-        # You might do some learning here based on the current state and the last state.
+        b_tree = self._transform('h', state['tree']['bot'])
+        b_monkey = self._transform('h', state['monkey']['bot'])
+        vel = self._transform('v', state['monkey']['vel'])
 
-        # You'll need to select and action and return it.
-        # Return 0 to swing and 1 to jump.
+        # D: pixels to next tree
+        # T: height of bottom of tree
+        # M: height of the monkey
 
-        new_action = npr.rand() < 0.1
-        new_state  = state
+        new_action = np.argmax(self.Q[:, d_tree, b_tree, b_monkey, vel])
+        self.k[new_action, d_tree, b_tree, b_monkey, vel] += 1
+        eps = EPS/self.k[new_action, d_tree, b_tree, b_monkey, vel]
+        if np.isnan(eps):
+            print "NANAN EPS"
+
+        if self.last_action == None or npr.rand() < eps:
+            # for your first step, do something random.
+            new_action = self.random_move()
 
         self.last_action = new_action
-        self.last_state  = new_state
-
+        self.last_state = (d_tree, b_tree, b_monkey, vel)
         return self.last_action
 
     def reward_callback(self, reward):
         '''This gets called so you can see what reward you get.'''
+        # transform reward
+        r = self.get_reward(reward)
+        # print r
 
-        self.last_reward = reward
+        # Update Q function
+        d_tree, b_tree, b_monkey, vel = self.last_state
+        #print self.Q[:, d_tree, b_tree, b_monkey, vel]
+        max_q = np.max(self.Q[:, d_tree, b_tree, b_monkey, vel])
+        old_val = self.Q[self.last_action, d_tree, b_tree, b_monkey, vel]
+        alpha = 1 / (self.k[self.last_action, d_tree, b_tree, b_monkey, vel] + 1)
+        new_val = old_val + alpha * (r + GAMMA * max_q - old_val)
+        self.Q[self.last_action, d_tree, b_tree, b_monkey, vel] = new_val
 
+        # if you dye...
+        if reward < 0:
+            self.eps = EPS
 
 def run_games(learner, hist, iters = 100, t_len = 100):
     '''
@@ -80,7 +181,7 @@ if __name__ == '__main__':
 	hist = []
 
 	# Run games.
-	run_games(agent, hist, 20, 10)
+	run_games(agent, hist, 10000000, 1)
 
 	# Save history.
 	np.save('hist',np.array(hist))
