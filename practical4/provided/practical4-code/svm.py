@@ -16,8 +16,8 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
 
-        self.X_train = np.zeros(shape=(1140, 9), dtype=int)
-        self.Y_train = np.empty(shape=1140, dtype=int)
+        self.X_train = np.zeros(shape=(30, 9), dtype=int)
+        self.Y_train = np.empty(shape=30, dtype=int)
 
         with open('training.txt', 'r') as f:
             count = 0
