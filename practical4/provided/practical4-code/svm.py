@@ -76,7 +76,7 @@ class Learner(object):
         state_info = np.asarray(state_info)
         state_info = state_info.reshape(1, -1)
 
-        clf = svm.SVC(C=1.0, kernel='poly')
+        clf = svm.SVC(kernel='linear')
         clf.fit(self.X_train, self.Y_train)
 
         act = clf.predict(state_info)
