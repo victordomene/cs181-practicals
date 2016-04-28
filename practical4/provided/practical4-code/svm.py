@@ -38,6 +38,9 @@ class Learner(object):
 
                 count += 1
 
+        self.clf = svm.SVC(kernel='linear')
+        self.clf.fit(self.X_train, self.Y_train)
+
         # print "count_lines = %d" % count
         # print "Y_train size = %d" % len(self.Y_train)
         # print "X_train size = %d" % len(self.X_train)
@@ -76,10 +79,7 @@ class Learner(object):
         state_info = np.asarray(state_info)
         state_info = state_info.reshape(1, -1)
 
-        clf = svm.SVC(kernel='linear')
-        clf.fit(self.X_train, self.Y_train)
-
-        act = clf.predict(state_info)
+        act = self.clf.predict(state_info)
         print act
 
         return act
