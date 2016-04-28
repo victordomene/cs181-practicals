@@ -131,6 +131,14 @@ class SwingyMonkey:
                                  'y': int((0.3 + npr.rand()*0.65)*(self.screen_height-self.tree_gap)),
                                  's': False })
 
+        state = self.get_state()
+        delta_x = state['tree']['dist']
+        delta_y = state['monkey']['bot'] - state['tree']['bot']
+        V = state['monkey']['vel']
+        state_info = [delta_x, delta_y, V, pow(delta_x, 2), pow(delta_y, 2), pow(V, 2), 
+                pow(delta_x, 3), pow(delta_y, 3), pow(V, 3)]
+        action = 0
+
         # Process input events.
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -138,6 +146,13 @@ class SwingyMonkey:
             elif self.action_fn is None and event.type == pg.KEYDOWN:
                 self.vel = npr.poisson(self.impulse)
                 self.hook = self.screen_width
+                action = 1
+            print (state_info, action)
+
+        train = str(state_info) + ";" + str(action)
+        f = open("training.txt", "a+")
+        f.write(train + "\n")
+        f.close()
 
         # Perhaps take an action via the callback.
         if self.action_fn is not None and self.action_fn(self.get_state()):
