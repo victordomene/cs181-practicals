@@ -14,7 +14,7 @@ To run the "Fixed Bins" approach, simply run the `q_fixed_bins.py` file.
 This model uses only 24 states of the world to learn, and it does so fairly
 quickly.
 
-To run the "25 Bins" approach, simply run `q_25_bins.py`. This will take a lot
+To run the "25 Bins" approach, simply run `q_few_bins.py`. This will take a lot
 longer to produce reasonable results.
 
 To run the "SVM" approach, simply run `svm.py`. This assumes that there is a training

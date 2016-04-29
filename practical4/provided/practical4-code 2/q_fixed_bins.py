@@ -37,7 +37,6 @@ class Learner(object):
 
         self.epoch = 0
         self.iters = 0 # number of iterations in the epoch
-	self.gravity = None
 
         self.eps = EPS
         self.v_history = []
@@ -55,14 +54,13 @@ class Learner(object):
         '''
 
         # Q Matrix
-        self.Q = np.zeros((2, 2, 2, 3, 2))
-        self.k = np.zeros((2, 2, 2, 3, 2))
+        self.Q = np.zeros((2, 2, 2, 3))
+        self.k = np.zeros((2, 2, 2, 3))
 
     def reset(self):
         self.last_state  = None
         self.last_action = None
         self.last_reward = None
-	self.gravity = None
 
     def _transform(self, t, d):
 	# velocity
@@ -100,58 +98,36 @@ class Learner(object):
         '''
         self.iters += 1
 
-	# Find all the features accordingly
 	d_tree = self._transform('w', state['tree']['dist'])
-        vert_delta = self._transform('h', (state['tree']['top'] + state['tree']['bot'])/2 - (state['monkey']['bot'] + state['monkey']['top'])/2)
+        horiz_delta = self._transform('h', (state['tree']['top'] + state['tree']['bot'])/2 - (state['monkey']['bot'] + state['monkey']['top'])/2)
         vel = self._transform('v', state['monkey']['vel'])
-	pos = state['monkey']['bot']
 
-        # for your first step, do not jump
+        # D: pixels to next tree
+        # T: height of bottom of tree
+        # M: height of the monkey
+	# print d_tree, horiz_delta, vel
+
+        new_action = np.argmax(self.Q[:, d_tree, horiz_delta, vel])
+        self.k[new_action, d_tree, horiz_delta, vel] += 1
+        eps = EPS/(self.k[new_action, d_tree, horiz_delta, vel])
+
+        # for your first step, do something random.
         if self.last_action == None:
-		new_action = 0
+            new_action = self.random_move()
 	else:
 		# Update Q function
-		old_dtree, old_vert_delta, old_vel, lastpos = self.last_state
-		
-		# If we do not have gravity yet, do not jump until we do.
-		if self.gravity is None:
-			if lastpos - pos == 4:
-				self.gravity = 0
-			elif lastpos - pos == 1:
-				self.gravity = 1
-			else:
-				self.last_action = 0
-				self.last_state = d_tree, vert_delta, vel, state['monkey']['bot']
-				
-				# Choose not to jump!
-				return 0
-		
-		# Now we have the gravity. Find the best action in the Q table
-		new_action = np.argmax(self.Q[:, d_tree, vert_delta, vel, self.gravity])
+		d_tree2, horiz_delta2, vel2 = self.last_state
+		max_q = np.max(self.Q[:, d_tree, horiz_delta, vel])
+		old_val = self.Q[self.last_action, d_tree2, horiz_delta2, vel2]
+		alpha = 1 / (self.k[self.last_action, d_tree, horiz_delta, vel] + 1)
 
-		# Update our k (used for alpha/epsilon updates)
-		self.k[new_action, d_tree, vert_delta, vel, self.gravity] += 1
-
-		# Find the appropriate epsilon and alpha
-		eps = EPS/(self.k[new_action, d_tree, vert_delta, vel, self.gravity])
-		alpha = 1 / (self.k[self.last_action, d_tree, vert_delta, vel, self.gravity] + 1)
-
-		# Get the maximum Q for this state
-		max_q = np.max(self.Q[:, d_tree, vert_delta, vel, self.gravity])
-
-		# Run the Q update rule
-		old_val = self.Q[self.last_action, old_dtree, old_vert_delta, old_vel, self.gravity]
 		new_val = old_val + alpha * (self.last_reward + GAMMA * max_q - old_val)
-		self.Q[self.last_action, old_dtree, old_vert_delta, old_vel, self.gravity] = new_val
-
-		# Finally, use epsilon greedy!
+		self.Q[self.last_action, d_tree2, horiz_delta2, vel2] = new_val
 		if (npr.rand() < eps):
 			new_action = self.random_move()
 
-	# Record the last action and last state
         self.last_action = new_action
-        self.last_state = d_tree, vert_delta, vel, state['monkey']['bot'] 
-
+        self.last_state = d_tree, horiz_delta, vel 
         return self.last_action
 
     def reward_callback(self, reward):
@@ -159,7 +135,6 @@ class Learner(object):
         r = self.get_reward(reward)
 	self.last_reward = r
 
-	# Print the exploration rate
 	if r < 0:
 		print "Exploration Rate: {}".format(float(np.count_nonzero(self.k)) / self.k.size) 
 

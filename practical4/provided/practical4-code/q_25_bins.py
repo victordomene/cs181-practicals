@@ -4,7 +4,7 @@
 # velocity
 
 # for the Q function.
-# with binnings, of course.
+# with binnings, of course. Here we try a big number of binnings.
 
 # Imports.
 import numpy as np
@@ -22,7 +22,7 @@ BIN_V = 1
 BIN_DT = 1 # Dist tree
 BIN_DB = 1 # Dist bottom
 GAMMA = 0.5 # discount factor
-EPS = 1.0 # e-greedy start parameter
+EPS = 0.01 # e-greedy start parameter
 ALPHA = 0.2
 
 class Learner(object):
@@ -54,37 +54,27 @@ class Learner(object):
         needs to be run on the data.
         '''
 
+        # TODO: What is the best way to initialize these functions?
+
         # Q Matrix
-        self.Q = np.zeros((2, 2, 2, 3, 2))
-        self.k = np.zeros((2, 2, 2, 3, 2))
+        self.Q = np.zeros((2, 1+self._transform('w', SCREEN_WIDTH), 1+self._transform('h', SCREEN_HEIGHT * 2), 5, 2))
+
+        self.k = np.zeros((2, 1+self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT * 2) + 1, 5, 2))
 
     def reset(self):
         self.last_state  = None
         self.last_action = None
         self.last_reward = None
-	self.gravity = None
 
     def _transform(self, t, d):
-	# velocity
-        if t == 'v':
-		if d < -10:
-			return 0
-		elif d < 0: 
-			return 1
-		else:
-			return 2
-	# height
-        elif t == 'h':
-		if d < 0:
-			return 0
-		else:
-			return 1
-	# width
-        elif t == 'w':
-		if d < 185:
-			return 0
-		else:
-			return 1
+        if t == 'v': # 'velocity' :
+		res = d / 20
+		return res
+
+        elif t == 'h': # height
+            return d / 50
+        elif t == 'w': # width
+            return d / 50
         return d
 
     def get_reward(self, r):
@@ -162,7 +152,6 @@ class Learner(object):
 	# Print the exploration rate
 	if r < 0:
 		print "Exploration Rate: {}".format(float(np.count_nonzero(self.k)) / self.k.size) 
-
 
 def run_games(learner, hist, iters = 100, t_len = 100):
     '''
