@@ -65,7 +65,7 @@ class Learner(object):
     def _transform(self, t, d):
 	# velocity
         if t == 'v':
-		if d < -20:
+		if d < -10:
 			return 0
 		elif d < 0: 
 			return 1
