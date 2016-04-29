@@ -1,23 +1,36 @@
-\documentclass[10pt]{article} 
-\usepackage[utf8]{inputenc}
-\usepackage[margin=1in]{geometry}
+\documentclass[10pt]{article}
 
-\usepackage[pdftex]{graphicx} 
-\usepackage{minted} 
+\usepackage{amsfonts,latexsym,amsthm,amssymb,amsmath,amscd,euscript}
+\def\arraystretch{1.2}
+
+\usepackage{bold-extra}
+\usepackage{framed}
+\usepackage{minted}
+\usepackage{graphicx}
+\usepackage[geometry]{ifsym}
 \usepackage{hyperref}
-\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=cyan}
+\hypersetup{colorlinks=true,citecolor=blue,urlcolor=blue,linkbordercolor={1 0 0}}
+
+\textwidth=14.5cm \textheight=20.0cm
+\oddsidemargin=1cm
+\evensidemargin=1cm
 
 \title{CS181 Practical 4: Swingy Monkey!} 
 \author{Victor Domene, Henrique Vaz, Joshua Meier} 
 \date{April 28th, 2016}
 
-\usepackage[pdftex]{graphicx}
-
 \begin{document}
 
 \maketitle
 
-\section{Abstract} In this practical, we performed machine learning on
+\section{Abstract} 
+
+In this practical, we performed machine learning on Swingy Monkey, a game
+based on the viral game Flappy Bird that took off a few years ago.
+In Swingy Monkey, at any point in time, there are only two possible actions:
+to jump, or not to jump. 
+
+In this practical, we performed machine learning on
 truncated lists of user / artist play counts, in order to predict how many
 times each of these users listened to every artist in the collection. The
 implications of high accuracy here are quite interesting - there are many
@@ -42,23 +55,20 @@ implementations from popular software packages.
 
 \subsection{Dependencies}
 
-\subsection{Data \& Validation} 
-
 \subsection{Data Analysis and Centering} 
 
-\begin{center} 
-\begin{tabular}{c c} 
-\hline 
-\hline
-mean & $4506.2$ \\ \hline
-median &  $2639$ \\ \hline 
-standard deviation & $6467.843$ \\ \hline 
-max & $453683$ \\ \hline 
-min & $9$ \\ \hline 
-\hline 
-\end{tabular} 
-\end{center}
-
+%\begin{center} 
+%\begin{tabular}{c c} 
+%\hline 
+%\hline
+%mean & $4506.2$ \\ \hline
+%median &  $2639$ \\ \hline 
+%standard deviation & $6467.843$ \\ \hline 
+%max & $453683$ \\ \hline 
+%min & $9$ \\ \hline 
+%\hline 
+%\end{tabular} 
+%\end{center}
 
 %\begin{figure}[h] 
 %\centering
@@ -71,28 +81,32 @@ min & $9$ \\ \hline
 %\label{fig:img3} 
 %\end{figure}
 
-\subsection{Incomplete Data} 
+\subsection{Feature Engineering: Handling the State Space} 
 
-\subsection{Demographic Information} 
+\subsubsection{Choosing the Features}
 
-\subsection{Feature Engineering} 
+\subsubsection{Binning}
 
-\subsection{Algorithms} 
+\subsection{Q-Learning}
 
-\subsubsection{Per-user Median} 
+\subsubsection{$\epsilon$-greedy}
 
-\subsubsection{Global Median}
+\subsection{Parameter Tuning}
 
-\subsubsection{Demographic Median} 
+\subsubsection{Learning Rate: $\alpha$}
 
-\subsubsection{Random Forests} 
+\subsubsection{Discount Rate: $\gamma$}
 
-\subsubsection{Matrix Factorization} 
+\subsubsection{Randomness: $\epsilon$}
+
+\subsubsection{Number of Bins}
+
+\subsection{Supervised Approach: For Fun!}
 
 \section{Code}
 
 Our code for this practical can be found in this
-\href{https://github.com/victordomene/cs181-practicals/tree/master/practical3}{GitHub
+\href{https://github.com/victordomene/cs181-practicals/tree/master/practical4}{GitHub
 Repository}. There is a README file with some setup instructions.
 
 \end{document}
