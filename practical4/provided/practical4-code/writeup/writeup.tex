@@ -38,7 +38,9 @@ the several parameters involved, and by changing the features used to represent
 each state. Ultimately, we discovered that the monkey would learn a lot faster
 and reasonably well with a smaller state space. Increasing the state space
 would have an eventual benefit, but it would take many more epochs to achieve
-the same kind of results.
+the same kind of results. Finally, we implemented (just for fun) a supervised
+way of learning: an SVM would learn from a human player, and play the game
+itself.
 
 \medskip
 
@@ -79,7 +81,9 @@ following features:
 
 Initially, we calculated the vertical distance from the monkey to the tree
 gap by using the bottom of them. This changed in the parameter tuning, and
-more details will be given later.
+more details will be given later. Also, notice that to get the gravity,
+we simply subtract the position of the monkey in the beginning and the
+position of the monkey one a bit later (after it has changed). 
 
 \subsection{Binning}
 
@@ -161,7 +165,7 @@ set
 
 \[ \alpha_{s,a,t} = \frac{1}{N_{s,a,t}} \]
 where $N_{s,a,t}$ is the number of times we have been in that state and took
-that action in the past. This approach led to a maximum score of $SOMETHING$, which
+that action in the past. This approach led to a maximum score of $131$, which
 is actually comparable to constant $\alpha = 0.2$. We decided to, in our submission,
 keep these updatable $\alpha$ rates. This approach seems to be one of the most
 common in the general literature we found on Reinforcement Learning.
@@ -230,12 +234,12 @@ shows the percentage of the state space that had been explored until that epoch
 \centering
 \begin{subfigure}{.5\textwidth}
   \centering
-  \includegraphics[width=0.8\textwidth]{25_bins.png}
+  \includegraphics[width=0.9\textwidth]{25_bins.png}
   \caption{Scatterplot of Scores}
 \end{subfigure}%
 \begin{subfigure}{.5\textwidth}
   \centering
-  \includegraphics[width=0.8\textwidth]{deepness.png}
+  \includegraphics[width=0.9\textwidth]{deepness.png}
   \caption{Deepness}
 \end{subfigure}
 \end{figure}
@@ -262,10 +266,17 @@ easily reaches $100\%$ deepness.
 \medskip
 
 \begin{center}
-\includegraphics[width=0.3\textwidth]{fixed_bins.png}
+\includegraphics[width=0.5\textwidth]{fixed_bins.png}
 \end{center}
 
 \medskip
+
+\section{Gravity: A Special Case}
+
+We noticed that the game was a lot harder to learn when gravity was $1$. Given
+enough epochs, it will be able to do around $50$ points. However, the best
+results of around $1000$ or more, were always achieved when gravity was $4$. We
+were unable to explore why this was the case.
 
 \section{Learning From Humans: Using Classifiers}
 
