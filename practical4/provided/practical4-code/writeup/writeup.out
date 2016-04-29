@@ -1,0 +1,15 @@
+\BOOKMARK [1][-]{section.1}{Abstract}{}% 1
+\BOOKMARK [1][-]{section.2}{Technical Approach}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Dependencies}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Data \046 Validation}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{Data Analysis and Centering}{section.2}% 5
+\BOOKMARK [2][-]{subsection.2.4}{Incomplete Data}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.5}{Demographic Information}{section.2}% 7
+\BOOKMARK [2][-]{subsection.2.6}{Feature Engineering}{section.2}% 8
+\BOOKMARK [2][-]{subsection.2.7}{Algorithms}{section.2}% 9
+\BOOKMARK [3][-]{subsubsection.2.7.1}{Per-user Median}{subsection.2.7}% 10
+\BOOKMARK [3][-]{subsubsection.2.7.2}{Global Median}{subsection.2.7}% 11
+\BOOKMARK [3][-]{subsubsection.2.7.3}{Demographic Median}{subsection.2.7}% 12
+\BOOKMARK [3][-]{subsubsection.2.7.4}{Random Forests}{subsection.2.7}% 13
+\BOOKMARK [3][-]{subsubsection.2.7.5}{Matrix Factorization}{subsection.2.7}% 14
+\BOOKMARK [1][-]{section.3}{Code}{}% 15

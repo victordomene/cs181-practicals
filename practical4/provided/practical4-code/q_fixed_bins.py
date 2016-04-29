@@ -21,9 +21,8 @@ MAX_VELOCITY = 60
 BIN_V = 1
 BIN_DT = 1 # Dist tree
 BIN_DB = 1 # Dist bottom
-GAMMA = 0.1 # discount factor
-EPS = 0.01 # e-greedy start parameter
-EPS_EXPONENT = 1.3
+GAMMA = 0.5 # discount factor
+EPS = 1.0 # e-greedy start parameter
 ALPHA = 0.2
 
 class Learner(object):
@@ -54,18 +53,9 @@ class Learner(object):
         needs to be run on the data.
         '''
 
-        # TODO: What is the best way to initialize these functions?
-
         # Q Matrix
-        # self.Q = np.random.choice([-0.1,-0.08,-0.06,-0.01,0,0.1,0.08,0.06,0.01], size=(2, self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT), self._transform('h', SCREEN_HEIGHT)))
-
-        self.Q = np.zeros((2, self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT), self._transform('v', MAX_VELOCITY) * 2))
-
-        self.k = np.zeros((2, self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT),  self._transform('v', MAX_VELOCITY) * 2))
-
-        # Number of times actions have been taken
-        # Used for epsilon greedy
-        # self.k = np.zeros((2, self._transform('w', SCREEN_WIDTH), self._transform('h', SCREEN_HEIGHT), self._transform('h', SCREEN_HEIGHT)))
+        self.Q = np.zeros((2, 2, 2, 3))
+        self.k = np.zeros((2, 2, 2, 3))
 
     def reset(self):
         self.last_state  = None
@@ -86,18 +76,22 @@ class Learner(object):
 
     def _transform(self, t, d):
         if t == 'v': # 'velocity' :
-            # res = (d + 15) / 5
-            # if np.abs(res) > 6:
-            #     res = np.sign(res) * 6
-            res = d / 10
-            if np.abs(res) > 4:
-                res = np.sign(res) * 4
-            res += 4
-            return res
+		if d < -10:
+			return 0
+		elif d < 0: 
+			return 1
+		else:
+			return 2
         elif t == 'h': # height
-            return (d + SCREEN_HEIGHT) / 20
+		if d < 0:
+			return 0
+		else:
+			return 1
         elif t == 'w': # width
-            return d / 50
+		if d < 185:
+			return 0
+		else:
+			return 1
         return d
 
     def get_reward(self, r):
@@ -115,49 +109,50 @@ class Learner(object):
         # if self.iters == 10:
         # print self.Q
         # self.eps /= EPS_CHANGE
-        # print state
-        # extract information
-        d_tree = self._transform('w', state['tree']['dist'])
-        if d_tree < 0:
-            d_tree = 0
 
-        horiz_delta = self._transform('h', state['tree']['bot'] - state['monkey']['bot'])
+	d_tree = self._transform('w', state['tree']['dist'])
+        horiz_delta = self._transform('h', (state['tree']['top'] + state['tree']['bot'])/2 - (state['monkey']['bot'] + state['monkey']['top'])/2)
         vel = self._transform('v', state['monkey']['vel'])
 
         # D: pixels to next tree
         # T: height of bottom of tree
         # M: height of the monkey
+	# print d_tree, horiz_delta, vel
 
         new_action = np.argmax(self.Q[:, d_tree, horiz_delta, vel])
+	# print self.Q[:, d_tree, horiz_delta, vel]
         self.k[new_action, d_tree, horiz_delta, vel] += 1
-        eps = EPS/(self.k[new_action, d_tree, horiz_delta, vel] ** EPS_EXPONENT)
+        eps = EPS/(self.k[new_action, d_tree, horiz_delta, vel])
 
-        if self.last_action == None or npr.rand() < eps:
+        if self.last_action == None:
             # for your first step, do something random.
             new_action = self.random_move()
+	else:
+		# Update Q function
+		d_tree2, horiz_delta2, vel2 = self.last_state
+		#print self.Q[:, d_tree, b_tree, b_monkey, vel]
+		max_q = np.max(self.Q[:, d_tree, horiz_delta, vel])
+		old_val = self.Q[self.last_action, d_tree2, horiz_delta2, vel2]
+		alpha = 1 / (self.k[self.last_action, d_tree, horiz_delta, vel] + 1)
+		new_val = old_val + alpha * (self.last_reward + GAMMA * max_q - old_val)
+		# print old_val, new_val, self.last_reward, max_q
+		self.Q[self.last_action, d_tree2, horiz_delta2, vel2] = new_val
+		if (npr.rand() < eps):
+			new_action = self.random_move()
 
         self.last_action = new_action
-        self.last_state = (d_tree, horiz_delta, vel)
+        self.last_state = d_tree, horiz_delta, vel 
         return self.last_action
 
     def reward_callback(self, reward):
         '''This gets called so you can see what reward you get.'''
         # transform reward
         r = self.get_reward(reward)
+	self.last_reward = r
         # print r
+	if r < 0:
+		print "Exploration Rate: {}".format(float(np.count_nonzero(self.k)) / self.k.size) 
 
-        # Update Q function
-        d_tree, horiz_delta, vel = self.last_state
-        #print self.Q[:, d_tree, b_tree, b_monkey, vel]
-        max_q = np.max(self.Q[:, d_tree, horiz_delta, vel])
-        old_val = self.Q[self.last_action, d_tree, horiz_delta, vel]
-        alpha = 1 / (self.k[self.last_action, d_tree, horiz_delta, vel] + 1)
-        new_val = old_val + alpha * (r + GAMMA * max_q - old_val)
-        self.Q[self.last_action, d_tree, horiz_delta, vel] = new_val
-
-        # if you dye...
-        if reward < 0:
-            self.eps = EPS
 
 def run_games(learner, hist, iters = 100, t_len = 100):
     '''
@@ -177,7 +172,8 @@ def run_games(learner, hist, iters = 100, t_len = 100):
             pass
 
         # Save score history.
-        hist.append(swing.score)
+	print "Score: {}".format(swing.score)
+	hist.append(swing.score)
 
         # Reset the state of the learner.
         learner.reset()
@@ -194,7 +190,7 @@ if __name__ == '__main__':
   hist = []
 
   # Run games.
-  run_games(agent, hist, 10000000, 1)
+  run_games(agent, hist, 1000, 1)
 
   # Save history.
   np.save('hist',np.array(hist))
