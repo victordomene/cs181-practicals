@@ -62,32 +62,23 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
 
-    # a collection of wrappers over velocity, distances, etc.
-    # that we can later use for binning and preprocessing.
-
-    def _v(self, v):
-        return v
-
-    def _dist_tree(self, d):
-        return d
-
-    def _dist_bot(self, d):
-        return d
-
     def _transform(self, t, d):
-        if t == 'v': # 'velocity' :
-		if d < -10:
+	# velocity
+        if t == 'v':
+		if d < -20:
 			return 0
 		elif d < 0: 
 			return 1
 		else:
 			return 2
-        elif t == 'h': # height
+	# height
+        elif t == 'h':
 		if d < 0:
 			return 0
 		else:
 			return 1
-        elif t == 'w': # width
+	# width
+        elif t == 'w':
 		if d < 185:
 			return 0
 		else:
@@ -106,9 +97,6 @@ class Learner(object):
         Return 0 if you don't want to jump and 1 if you do.
         '''
         self.iters += 1
-        # if self.iters == 10:
-        # print self.Q
-        # self.eps /= EPS_CHANGE
 
 	d_tree = self._transform('w', state['tree']['dist'])
         horiz_delta = self._transform('h', (state['tree']['top'] + state['tree']['bot'])/2 - (state['monkey']['bot'] + state['monkey']['top'])/2)
@@ -120,22 +108,20 @@ class Learner(object):
 	# print d_tree, horiz_delta, vel
 
         new_action = np.argmax(self.Q[:, d_tree, horiz_delta, vel])
-	# print self.Q[:, d_tree, horiz_delta, vel]
         self.k[new_action, d_tree, horiz_delta, vel] += 1
         eps = EPS/(self.k[new_action, d_tree, horiz_delta, vel])
 
+        # for your first step, do something random.
         if self.last_action == None:
-            # for your first step, do something random.
             new_action = self.random_move()
 	else:
 		# Update Q function
 		d_tree2, horiz_delta2, vel2 = self.last_state
-		#print self.Q[:, d_tree, b_tree, b_monkey, vel]
 		max_q = np.max(self.Q[:, d_tree, horiz_delta, vel])
 		old_val = self.Q[self.last_action, d_tree2, horiz_delta2, vel2]
 		alpha = 1 / (self.k[self.last_action, d_tree, horiz_delta, vel] + 1)
+
 		new_val = old_val + alpha * (self.last_reward + GAMMA * max_q - old_val)
-		# print old_val, new_val, self.last_reward, max_q
 		self.Q[self.last_action, d_tree2, horiz_delta2, vel2] = new_val
 		if (npr.rand() < eps):
 			new_action = self.random_move()
@@ -146,10 +132,9 @@ class Learner(object):
 
     def reward_callback(self, reward):
         '''This gets called so you can see what reward you get.'''
-        # transform reward
         r = self.get_reward(reward)
 	self.last_reward = r
-        # print r
+
 	if r < 0:
 		print "Exploration Rate: {}".format(float(np.count_nonzero(self.k)) / self.k.size) 
 
