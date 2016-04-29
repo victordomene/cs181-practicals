@@ -4,7 +4,7 @@
 # velocity
 
 # for the Q function.
-# with binnings, of course.
+# with binnings, of course. This uses a fixed (small) number of bins.
 
 # Imports.
 import numpy as np
@@ -64,6 +64,7 @@ class Learner(object):
         self.last_reward = None
 	self.gravity = None
 
+    # Defines the bins. Values are hard-coded.
     def _transform(self, t, d):
 	# velocity
         if t == 'v':

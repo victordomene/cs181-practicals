@@ -4,7 +4,7 @@
 # velocity
 
 # for the Q function.
-# with binnings, of course. Here we try a big number of binnings.
+# with binnings, of course. Here we try 25 binnings.
 
 # Imports.
 import numpy as np
@@ -66,6 +66,8 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
 
+
+    # This function basically defines what the binning will look like
     def _transform(self, t, d):
         if t == 'v': # 'velocity' :
 		res = d / 20
